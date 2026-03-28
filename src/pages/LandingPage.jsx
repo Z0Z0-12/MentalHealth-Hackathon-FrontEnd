@@ -102,12 +102,40 @@ function LandingPage() {
           box-shadow: 0 8px 20px rgba(10, 42, 15, 0.16);
         }
 
+        /* TICKER BANNER */
+        .lp-ticker {
+          position: fixed;
+          top: 64px;
+          left: 0; right: 0;
+          z-index: 99;
+          background: #0a2a0f;
+          color: #dff89a;
+          padding: 10px 0;
+          overflow: hidden;
+          white-space: nowrap;
+        }
+        .lp-ticker-track {
+          display: inline-flex;
+          gap: 80px;
+          animation: lp-ticker 22s linear infinite;
+        }
+        .lp-ticker-track span {
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+        }
+        @keyframes lp-ticker {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-50%); }
+        }
+
         /* HERO — LinkedIn split layout */
         .lp-hero {
           min-height: 92vh;
           display: flex;
           align-items: stretch;
-          padding-top: 80px;
+          padding-top: 120px;
           overflow: hidden;
         }
 
@@ -126,6 +154,13 @@ function LandingPage() {
           to   { opacity: 1; transform: translateY(0); }
         }
 
+        .lp-eyebrow-row {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-bottom: 28px;
+        }
+
         .lp-eyebrow {
           display: inline-flex;
           align-items: center;
@@ -139,7 +174,6 @@ function LandingPage() {
           color: #19461f;
           letter-spacing: 0.9px;
           text-transform: uppercase;
-          margin-bottom: 28px;
           width: fit-content;
           backdrop-filter: blur(8px);
         }
@@ -254,7 +288,6 @@ function LandingPage() {
           display: block;
         }
 
-        /* Soft fade on left edge so image blends into bg */
         .lp-hero-right::before {
           content: '';
           position: absolute;
@@ -264,7 +297,7 @@ function LandingPage() {
           pointer-events: none;
         }
 
-        /* Wave divider between hero and content */
+        /* Wave divider */
         .lp-hero-wave {
           position: relative;
           margin-top: -2px;
@@ -272,7 +305,7 @@ function LandingPage() {
         }
         .lp-hero-wave svg { width: 100%; display: block; }
 
-        /* FEATURES — 3 simple cards, minimal */
+        /* FEATURES */
         .lp-features-section {
           max-width: 1000px;
           margin: 0 auto;
@@ -436,24 +469,30 @@ function LandingPage() {
           <Link to="/dashboard" className="lp-nav-cta">Join now →</Link>
         </nav>
 
+        {/* TICKER BANNER */}
+        <div className="lp-ticker">
+          <div className="lp-ticker-track">
+            <span>WE KNOW WHAT IT FEELS LIKE TO STEP OUT OF THE COMFORT ZONE. SO WE ARE HERE TO HELP YOU THROUGH THE WAY.</span>
+            <span>WE KNOW WHAT IT FEELS LIKE TO STEP OUT OF THE COMFORT ZONE. SO WE ARE HERE TO HELP YOU THROUGH THE WAY.</span>
+          </div>
+        </div>
+
         {/* HERO — split layout */}
         <section className="lp-hero">
 
-         {/* Left: text */}
-        <div className="lp-hero-left">
-        <div className="lp-eyebrow-row">
-            <div className="lp-eyebrow"> Access to university networks</div>
-            <div className="lp-eyebrow"> All round support for students</div>
-        </div>
+          {/* Left: text */}
+          <div className="lp-hero-left">
+            <div className="lp-eyebrow-row">
+              <div className="lp-eyebrow">Access to university networks</div>
+              <div className="lp-eyebrow">All round support for students</div>
+            </div>
 
             <h1>
               You're not alone<br />
               <em>in figuring it out</em>
             </h1>
 
-            <p className="lp-hero-sub">
-              
-            </p>
+            <p className="lp-hero-sub"></p>
 
             <div className="lp-hero-btns">
               <Link to="/dashboard" className="lp-btn primary">Get started →</Link>
@@ -469,8 +508,6 @@ function LandingPage() {
             </div>
           </div>
 
-          
-
         </section>
 
         {/* Wave divider */}
@@ -481,7 +518,7 @@ function LandingPage() {
           </svg>
         </div>
 
-        {/* FEATURES — minimal 3 cards */}
+        {/* FEATURES */}
         <section className="lp-features-section">
           <div className="lp-section-label">What we offer</div>
           <div className="lp-section-head">
@@ -496,15 +533,12 @@ function LandingPage() {
               </div>
             </div>
             <div className="lp-feature-card">
-              
               <div className="lp-feature-title">Internships by major</div>
               <div className="lp-feature-desc">
                 Explore opportunities tailored to your field, reducing the overwhelm of searching without guidance.
               </div>
             </div>
-            
             <div className="lp-feature-card">
-              
               <div className="lp-feature-title">Mental health support</div>
               <div className="lp-feature-desc">
                 Access burnout resources and peer check-ins that help you protect your wellbeing while building your future.
