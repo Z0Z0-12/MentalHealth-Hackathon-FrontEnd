@@ -1,19 +1,19 @@
 import { useState } from 'react'
-import { MessageCircle, Users, LayoutList, Briefcase, Home } from 'lucide-react'
+import { MessageCircle, CalendarDays, LayoutList, Briefcase, Home } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import WheelNav from '../components/WheelNav'
 import ChatsTab from '../components/ChatsTab'
-import CommunityTab from '../components/CommunityTab'
+import EventsTab from '../components/EventsTab'
 import ForumTab from '../components/ForumTab'
 import CareerTab from '../components/CareerTab'
 import HousingTab from '../components/HousingTab'
 
 const tabs = [
-  { id: 'chats',     label: 'Chats',     icon: MessageCircle },
-  { id: 'community', label: 'Community', icon: Users         },
-  { id: 'forum',     label: 'Forum',     icon: LayoutList    },
-  { id: 'career',    label: 'Career',    icon: Briefcase     },
-  { id: 'housing',   label: 'Housing',   icon: Home          },
+  { id: 'chats',   label: 'Chats',  icon: MessageCircle },
+  { id: 'events',  label: 'Events', icon: CalendarDays  },
+  { id: 'forum',   label: 'Forum',  icon: LayoutList    },
+  { id: 'career',  label: 'Career', icon: Briefcase     },
+  { id: 'housing', label: 'Housing',icon: Home          },
 ]
 
 const glassCard = {
@@ -75,11 +75,11 @@ export default function Dashboard() {
           className="rounded-b-3xl flex-1 overflow-y-auto p-5"
           style={{ ...glassCard, position: 'relative', zIndex: 3 }}
         >
-          {activeTab === 'chats'     && <ChatsTab />}
-          {activeTab === 'community' && <CommunityTab />}
-          {activeTab === 'forum'     && <ForumTab />}
-          {activeTab === 'career'    && <CareerTab />}
-          {activeTab === 'housing'   && <HousingTab />}
+          {activeTab === 'chats'   && <ChatsTab />}
+          {activeTab === 'events'  && <EventsTab />}
+          {activeTab === 'forum'   && <ForumTab />}
+          {activeTab === 'career'  && <CareerTab />}
+          {activeTab === 'housing' && <HousingTab />}
         </div>
       </main>
     </div>
