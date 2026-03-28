@@ -1,15 +1,54 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
+export default function LandingPage() {
+  const navigate = useNavigate()
+  const { login, register, loginWithGoogle } = useAuth()
 
-function LandingPage() {
-  const [scrolled, setScrolled] = useState(false)
+  const [mode, setMode]               = useState('login')
+  const [role, setRole]               = useState('student')
+  const [loading, setLoading]         = useState(false)
+  const [error, setError]             = useState('')
+  const [email, setEmail]             = useState('')
+  const [password, setPassword]       = useState('')
+  const [name, setName]               = useState('')
+  const [adminSecret, setAdminSecret] = useState('')
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', onScroll)
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  const redirectByRole = (role) => {
+    if (role === 'student')         navigate('/dashboard/student')
+    else if (role === 'university') navigate('/dashboard/university')
+    else                            navigate('/dashboard/admin')
+  }
+
+  const handleSubmit = async () => {
+    setError('')
+    if (!email || !password) { setError('Please fill in all fields.'); return }
+    setLoading(true)
+    try {
+      if (mode === 'login') {
+        const me = await login(email, password)
+        redirectByRole(me.role)
+      } else {
+        const payload = { email, password }
+        if (role !== 'admin') payload.name = name
+        if (role === 'admin') payload.admin_secret = adminSecret
+        const me = await register(role, payload)
+        if (me?.role) redirectByRole(me.role)
+      }
+    } catch (err) {
+      setError(err.message || 'Something went wrong.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGoogle = async () => {
+    try { await loginWithGoogle() }
+    catch (err) { setError(err.message) }
+  }
+
+  const roleLabels = { student: 'Student', university: 'University', admin: 'Admin' }
 
   return (
     <>
@@ -28,7 +67,6 @@ function LandingPage() {
 
         #root { max-width: 100%; padding: 0; text-align: left; }
 
-        /* WAVES */
         .lp-waves {
           position: fixed;
           bottom: 0; left: 0; right: 0;
@@ -37,128 +75,38 @@ function LandingPage() {
         }
         .lp-waves svg { width: 100%; display: block; }
 
-        /* PAGE */
         .lp-page {
           min-height: 100vh;
-          overflow-x: hidden;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
           position: relative;
           z-index: 1;
         }
 
-        /* NAV */
-        .lp-nav {
-          position: fixed;
-          top: 0; left: 0; right: 0;
-          z-index: 100;
-          padding: 20px 60px;
+        /* LEFT */
+        .lp-left {
           display: flex;
-          align-items: center;
+          flex-direction: column;
           justify-content: space-between;
-          transition: all 0.3s ease;
+          padding: 48px 56px;
+          min-height: 100vh;
         }
-        .lp-nav.scrolled {
-          background: rgba(232, 245, 226, 0.88);
-          backdrop-filter: blur(14px);
-          border-bottom: 1px solid rgba(10, 42, 15, 0.08);
-          box-shadow: 0 10px 30px rgba(10, 42, 15, 0.06);
-        }
-        .lp-nav-logo {
+
+        .lp-logo {
           font-family: 'Playfair Display', serif;
           font-weight: 900;
-          font-size: 24px;
+          font-size: 22px;
           color: #0a2a0f;
-          letter-spacing: -0.6px;
+          letter-spacing: -0.5px;
           text-decoration: none;
         }
-        .lp-nav-links {
-          display: flex;
-          gap: 36px;
-          list-style: none;
-        }
-        .lp-nav-links a {
-          font-size: 14px;
-          font-weight: 500;
-          color: #0e3a16;
-          text-decoration: none;
-          opacity: 0.84;
-          transition: opacity 0.2s ease, transform 0.2s ease;
-        }
-        .lp-nav-links a:hover { opacity: 1; transform: translateY(-1px); }
-        .lp-nav-cta {
-          font-size: 13px;
-          font-weight: 700;
-          background: #0a2a0f;
-          color: #dff89a;
-          border: none;
-          padding: 11px 22px;
-          border-radius: 999px;
-          cursor: pointer;
-          letter-spacing: 0.4px;
-          transition: all 0.25s ease;
-        }
-        .lp-nav-cta:hover {
-          background: #143c19;
-          transform: translateY(-1px);
-          box-shadow: 0 8px 20px rgba(10, 42, 15, 0.16);
-        }
 
-        /* TICKER BANNER */
-        .lp-ticker {
-          position: fixed;
-          top: 64px;
-          left: 0; right: 0;
-          z-index: 99;
-          background: #0a2a0f;
-          color: #dff89a;
-          padding: 10px 0;
-          overflow: hidden;
-          white-space: nowrap;
-        }
-        .lp-ticker-track {
-          display: inline-flex;
-          gap: 80px;
-          animation: lp-ticker 22s linear infinite;
-        }
-        .lp-ticker-track span {
-          font-size: 12px;
-          font-weight: 700;
-          letter-spacing: 1.5px;
-          text-transform: uppercase;
-        }
-        @keyframes lp-ticker {
-          from { transform: translateX(0); }
-          to   { transform: translateX(-50%); }
-        }
-
-        /* HERO — LinkedIn split layout */
-        .lp-hero {
-          min-height: 92vh;
-          display: flex;
-          align-items: stretch;
-          padding-top: 120px;
-          overflow: hidden;
-        }
-
-        /* LEFT — text */
-        .lp-hero-left {
+        .lp-hero-content {
           flex: 1;
           display: flex;
           flex-direction: column;
           justify-content: center;
-          padding: 80px 60px 80px 80px;
-          animation: lp-fadeUp 0.9s ease both;
-        }
-
-        @keyframes lp-fadeUp {
-          from { opacity: 0; transform: translateY(28px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .lp-eyebrow-row {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-          margin-bottom: 28px;
+          padding: 40px 0;
         }
 
         .lp-eyebrow {
@@ -166,21 +114,22 @@ function LandingPage() {
           align-items: center;
           gap: 8px;
           padding: 7px 14px;
-          background: rgba(255, 255, 255, 0.55);
-          border: 1px solid rgba(10, 42, 15, 0.1);
+          background: rgba(255,255,255,0.55);
+          border: 1px solid rgba(10,42,15,0.1);
           border-radius: 999px;
           font-size: 11px;
           font-weight: 700;
           color: #19461f;
           letter-spacing: 0.9px;
           text-transform: uppercase;
-          width: fit-content;
+          margin-bottom: 28px;
           backdrop-filter: blur(8px);
+          width: fit-content;
         }
 
-        .lp-hero h1 {
+        .lp-headline {
           font-family: 'Playfair Display', serif;
-          font-size: clamp(40px, 5vw, 68px);
+          font-size: clamp(36px, 4vw, 58px);
           font-weight: 900;
           line-height: 1.06;
           color: #071a0b;
@@ -188,388 +137,394 @@ function LandingPage() {
           margin-bottom: 20px;
         }
 
-        .lp-hero h1 em {
-          font-style: italic;
-          color: #1a4a20;
-        }
+        .lp-headline em { font-style: italic; color: #1a4a20; }
 
-        .lp-hero-sub {
-          font-size: 17px;
-          font-weight: 400;
+        .lp-sub {
+          font-size: 16px;
           color: #2a5230;
           line-height: 1.75;
-          max-width: 460px;
+          max-width: 400px;
           margin-bottom: 40px;
+          font-weight: 400;
         }
 
-        .lp-hero-btns {
-          display: flex;
-          gap: 14px;
-          flex-wrap: wrap;
-          margin-bottom: 48px;
-        }
+        .lp-stats { display: flex; gap: 32px; }
 
-        .lp-btn {
-          font-size: 14px;
-          font-weight: 700;
-          border: none;
-          padding: 14px 28px;
-          border-radius: 999px;
-          cursor: pointer;
-          letter-spacing: 0.4px;
-          text-decoration: none;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          transition: all 0.25s ease;
-        }
-        .lp-btn.primary { background: #0a2a0f; color: #ecfcbf; }
-        .lp-btn.primary:hover {
-          background: #071a0b;
-          transform: translateY(-2px);
-          box-shadow: 0 12px 28px rgba(10, 42, 15, 0.22);
-        }
-        .lp-btn.secondary {
-          background: rgba(255, 255, 255, 0.62);
-          color: #0a2a0f;
-          border: 1px solid rgba(10, 42, 15, 0.12);
-          backdrop-filter: blur(8px);
-        }
-        .lp-btn.secondary:hover {
-          background: rgba(255, 255, 255, 0.85);
-          transform: translateY(-2px);
-        }
-
-        /* Trust row */
-        .lp-trust {
-          display: flex;
-          align-items: center;
-          gap: 20px;
-        }
-        .lp-trust-note {
-          font-size: 13px;
-          color: #3a6040;
-          line-height: 1.5;
-          max-width: 300px;
-        }
-        .lp-trust-badges {
-          display: flex;
-          gap: 8px;
-        }
-        .lp-badge {
-          padding: 6px 12px;
-          background: rgba(255,255,255,0.5);
-          border: 1px solid rgba(10,42,15,0.1);
-          border-radius: 999px;
-          font-size: 11px;
-          font-weight: 600;
-          color: #1a4a22;
-          backdrop-filter: blur(6px);
-        }
-
-        /* RIGHT — image */
-        .lp-hero-right {
-          flex: 1;
-          position: relative;
-          overflow: hidden;
-          animation: lp-fadeIn 1.1s ease 0.15s both;
-        }
-
-        @keyframes lp-fadeIn {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-
-        .lp-hero-img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          object-position: center;
-          display: block;
-        }
-
-        .lp-hero-right::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(90deg, #dff89a 0%, transparent 30%);
-          z-index: 1;
-          pointer-events: none;
-        }
-
-        /* Wave divider */
-        .lp-hero-wave {
-          position: relative;
-          margin-top: -2px;
-          line-height: 0;
-        }
-        .lp-hero-wave svg { width: 100%; display: block; }
-
-        /* FEATURES */
-        .lp-features-section {
-          max-width: 1000px;
-          margin: 0 auto;
-          padding: 60px 40px 80px;
-        }
-        .lp-section-label {
-          font-size: 11px;
-          font-weight: 700;
-          color: #5a8060;
-          letter-spacing: 1.2px;
-          text-transform: uppercase;
-          text-align: center;
-          margin-bottom: 14px;
-        }
-        .lp-section-head {
-          text-align: center;
-          margin-bottom: 48px;
-        }
-        .lp-section-head h2 {
+        .lp-stat-num {
           font-family: 'Playfair Display', serif;
-          font-size: clamp(30px, 4vw, 46px);
-          color: #071a0b;
-          letter-spacing: -1px;
-          line-height: 1.1;
+          font-size: 26px;
+          font-weight: 900;
+          color: #0a2a0f;
         }
-        .lp-features {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 20px;
-        }
-        .lp-feature-card {
-          background: rgba(255, 255, 255, 0.58);
-          border: 1px solid rgba(10, 42, 15, 0.09);
-          border-radius: 20px;
-          padding: 28px 22px;
-          backdrop-filter: blur(10px);
-          transition: transform 0.25s ease, box-shadow 0.25s ease;
-        }
-        .lp-feature-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 14px 36px rgba(10, 42, 15, 0.09);
-        }
-        .lp-feature-icon {
-          width: 44px; height: 44px;
-          background: linear-gradient(135deg, #b6f542, #7de870);
-          border-radius: 12px;
+
+        .lp-stat-label { font-size: 12px; color: #3a6040; margin-top: 2px; }
+
+        /* RIGHT */
+        .lp-right {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 20px;
+          padding: 48px 40px;
+          min-height: 100vh;
+          border-left: 1px solid rgba(10,42,15,0.08);
+        }
+
+        .lp-card {
+          width: 100%;
+          max-width: 400px;
+          background: rgba(255,255,255,0.58);
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+          border: 1px solid rgba(10,42,15,0.1);
+          border-radius: 24px;
+          padding: 36px 32px;
+          animation: fadeUp 0.5s ease both;
+        }
+
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .lp-card-title {
+          font-family: 'Playfair Display', serif;
+          font-size: 26px;
+          font-weight: 900;
+          color: #071a0b;
+          letter-spacing: -0.5px;
+          margin-bottom: 4px;
+        }
+
+        .lp-card-sub {
+          font-size: 13px;
+          color: #3a6040;
+          margin-bottom: 24px;
+        }
+
+        /* Role tabs */
+        .lp-tabs {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 6px;
+          margin-bottom: 20px;
+          background: rgba(10,42,15,0.06);
+          padding: 4px;
+          border-radius: 14px;
+        }
+
+        .lp-tab {
+          padding: 8px;
+          border-radius: 10px;
+          border: none;
+          background: transparent;
+          color: #3a6040;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          text-align: center;
+        }
+
+        .lp-tab.active { background: #0a2a0f; color: #dff89a; }
+
+        /* Fields */
+        .lp-field { margin-bottom: 14px; }
+
+        .lp-label {
+          display: block;
+          font-size: 12px;
+          font-weight: 600;
+          color: #2a5230;
+          margin-bottom: 6px;
+        }
+
+        .lp-input {
+          width: 100%;
+          padding: 11px 14px;
+          background: rgba(255,255,255,0.7);
+          border: 1px solid rgba(10,42,15,0.15);
+          border-radius: 12px;
+          color: #071a0b;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          outline: none;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .lp-input:focus {
+          border-color: #0a2a0f;
+          box-shadow: 0 0 0 3px rgba(10,42,15,0.08);
+        }
+
+        .lp-input::placeholder { color: #7a9a80; }
+
+        .lp-btn-primary {
+          width: 100%;
+          padding: 13px;
+          border-radius: 999px;
+          border: none;
+          background: #0a2a0f;
+          color: #dff89a;
+          font-family: 'DM Sans', sans-serif;
+          font-weight: 700;
+          font-size: 14px;
+          letter-spacing: 0.3px;
+          cursor: pointer;
+          transition: all 0.2s;
+          margin-top: 4px;
+        }
+
+        .lp-btn-primary:hover:not(:disabled) {
+          background: #143c19;
+          transform: translateY(-1px);
+          box-shadow: 0 8px 20px rgba(10,42,15,0.2);
+        }
+
+        .lp-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .lp-btn-google {
+          width: 100%;
+          padding: 11px;
+          border-radius: 999px;
+          border: 1px solid rgba(10,42,15,0.15);
+          background: rgba(255,255,255,0.6);
+          color: #0a2a0f;
+          font-family: 'DM Sans', sans-serif;
+          font-weight: 600;
+          font-size: 13px;
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin-top: 10px;
+        }
+
+        .lp-btn-google:hover {
+          background: rgba(255,255,255,0.85);
+          transform: translateY(-1px);
+        }
+
+        .lp-divider {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin: 14px 0 4px;
+          color: #5a8060;
+          font-size: 12px;
+        }
+
+        .lp-divider::before,
+        .lp-divider::after {
+          content: '';
+          flex: 1;
+          height: 1px;
+          background: rgba(10,42,15,0.1);
+        }
+
+        .lp-error {
+          background: rgba(220,53,69,0.08);
+          border: 1px solid rgba(220,53,69,0.2);
+          color: #b91c1c;
+          padding: 10px 14px;
+          border-radius: 12px;
+          font-size: 13px;
           margin-bottom: 14px;
         }
-        .lp-feature-title {
-          font-family: 'Playfair Display', serif;
-          font-size: 18px;
-          font-weight: 700;
-          color: #071a0b;
-          margin-bottom: 8px;
-        }
-        .lp-feature-desc {
-          font-size: 14px;
-          color: #3a6040;
-          line-height: 1.7;
-        }
 
-        /* CTA */
-        .lp-cta-strip {
-          max-width: 900px;
-          margin: 0 auto 100px;
-          padding: 0 40px;
-        }
-        .lp-cta-card {
-          background: rgba(10, 42, 15, 0.9);
-          color: #f8ffe6;
-          border-radius: 24px;
-          padding: 48px 44px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 32px;
-          box-shadow: 0 24px 50px rgba(10, 42, 15, 0.18);
-        }
-        .lp-cta-card h3 {
-          font-family: 'Playfair Display', serif;
-          font-size: 32px;
-          margin-bottom: 10px;
-          line-height: 1.2;
-        }
-        .lp-cta-card p {
-          font-size: 15px;
-          line-height: 1.7;
-          color: rgba(248, 255, 230, 0.75);
-          max-width: 480px;
-        }
-        .lp-cta-actions {
-          display: flex;
-          gap: 12px;
-          flex-wrap: wrap;
-          flex-shrink: 0;
-        }
-
-        /* FOOTER */
-        .lp-footer {
+        .lp-toggle {
           text-align: center;
-          padding: 32px 24px 44px;
+          margin-top: 20px;
           font-size: 13px;
-          color: #4a7050;
-          border-top: 1px solid rgba(10, 42, 15, 0.08);
+          color: #3a6040;
         }
-        .lp-footer a {
-          color: #0a2a0f;
-          text-decoration: none;
-          font-weight: 700;
-        }
-        .lp-footer a:hover { text-decoration: underline; }
 
-        /* RESPONSIVE */
-        @media (max-width: 900px) {
-          .lp-hero { flex-direction: column; min-height: auto; }
-          .lp-hero-left { padding: 100px 32px 40px; }
-          .lp-hero-right { height: 300px; }
-          .lp-hero-right::before {
-            background: linear-gradient(180deg, #dff89a 0%, transparent 30%);
-          }
-          .lp-features { grid-template-columns: 1fr; }
-          .lp-cta-card { flex-direction: column; align-items: flex-start; }
-          .lp-nav { padding: 16px 24px; }
+        .lp-toggle button {
+          background: none;
+          border: none;
+          color: #0a2a0f;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          text-decoration: underline;
+          text-underline-offset: 3px;
         }
+
         @media (max-width: 768px) {
-          .lp-nav-links, .lp-nav-cta { display: none; }
-          .lp-hero-left { padding: 100px 22px 32px; }
-          .lp-features-section, .lp-cta-strip { padding-left: 18px; padding-right: 18px; }
-          .lp-cta-card { padding: 28px 22px; }
-          .lp-cta-card h3 { font-size: 26px; }
+          .lp-page { grid-template-columns: 1fr; }
+          .lp-left { display: none; }
+          .lp-right { padding: 40px 20px; padding-top: 60px; align-items: flex-start; }
+          .lp-card { max-width: 100%; }
         }
       `}</style>
 
-      {/* WAVE HILLS — fixed bottom */}
+      {/* Waves */}
       <div className="lp-waves">
         <svg viewBox="0 0 1440 380" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-          <path fill="rgba(140,200,120,0.22)"
-            d="M0,220 C160,155 320,285 480,220 C640,155 800,285 960,220 C1120,155 1280,265 1440,210 L1440,380 L0,380 Z"/>
-          <path fill="rgba(100,175,90,0.2)"
-            d="M0,265 C200,195 400,325 600,265 C800,205 1000,325 1200,268 C1320,238 1390,258 1440,252 L1440,380 L0,380 Z"/>
-          <path fill="rgba(70,155,70,0.18)"
-            d="M0,305 C240,245 480,365 720,305 C960,245 1200,365 1440,305 L1440,380 L0,380 Z"/>
+          <path fill="rgba(140,200,120,0.22)" d="M0,220 C160,155 320,285 480,220 C640,155 800,285 960,220 C1120,155 1280,265 1440,210 L1440,380 L0,380 Z"/>
+          <path fill="rgba(100,175,90,0.2)"  d="M0,265 C200,195 400,325 600,265 C800,205 1000,325 1200,268 C1320,238 1390,258 1440,252 L1440,380 L0,380 Z"/>
+          <path fill="rgba(70,155,70,0.18)"  d="M0,305 C240,245 480,365 720,305 C960,245 1200,365 1440,305 L1440,380 L0,380 Z"/>
         </svg>
       </div>
 
       <div className="lp-page">
 
-        {/* NAV */}
-        <nav className={`lp-nav${scrolled ? ' scrolled' : ''}`}>
-          <Link to="/" className="lp-nav-logo">StudentLife</Link>
-          <ul className="lp-nav-links">
-            <li><Link to="/platform">Platform</Link></li>
-            <li><Link to="/community">Community</Link></li>
-            <li><Link to="/resources">Resources</Link></li>
-            <li><Link to="/about">About</Link></li>
-          </ul>
-          <Link to="/dashboard" className="lp-nav-cta">Join now →</Link>
-        </nav>
+        {/* LEFT */}
+        <div className="lp-left">
+          <div className="lp-logo">StudentLife</div>
 
-        {/* TICKER BANNER */}
-        <div className="lp-ticker">
-          <div className="lp-ticker-track">
-            <span>WE KNOW WHAT IT FEELS LIKE TO STEP OUT OF THE COMFORT ZONE. SO WE ARE HERE TO HELP YOU THROUGH THE WAY.</span>
-            <span>WE KNOW WHAT IT FEELS LIKE TO STEP OUT OF THE COMFORT ZONE. SO WE ARE HERE TO HELP YOU THROUGH THE WAY.</span>
-          </div>
-        </div>
-
-        {/* HERO — split layout */}
-        <section className="lp-hero">
-
-          {/* Left: text */}
-          <div className="lp-hero-left">
-            <div className="lp-eyebrow-row">
-              <div className="lp-eyebrow">Access to university networks</div>
-              <div className="lp-eyebrow">All round support for students</div>
-            </div>
-
-            <h1>
+          <div className="lp-hero-content">
+            <div className="lp-eyebrow">✦ Student support platform</div>
+            <h1 className="lp-headline">
               You're not alone<br />
               <em>in figuring it out</em>
             </h1>
-
-            <p className="lp-hero-sub"></p>
-
-            <div className="lp-hero-btns">
-              <Link to="/dashboard" className="lp-btn primary">Get started →</Link>
-              <Link to="/dashboard" className="lp-btn secondary">Join a community</Link>
-            </div>
-
-            <div className="lp-trust">
-              <div className="lp-trust-badges">
-                <span className="lp-badge">Free to join</span>
-                <span className="lp-badge">Student-led</span>
+            <p className="lp-sub">
+              Connect with your university community, find internships, access mental health resources, and build your future — all in one place.
+            </p>
+            <div className="lp-stats">
+              <div>
+                <div className="lp-stat-num">2.4k+</div>
+                <div className="lp-stat-label">Students supported</div>
               </div>
-              <p className="lp-trust-note">Built for students navigating pressure, purpose, and success.</p>
+              <div>
+                <div className="lp-stat-num">380+</div>
+                <div className="lp-stat-label">Universities</div>
+              </div>
+              <div>
+                <div className="lp-stat-num">Free</div>
+                <div className="lp-stat-label">Always</div>
+              </div>
             </div>
           </div>
 
-        </section>
-
-        {/* Wave divider */}
-        <div className="lp-hero-wave">
-          <svg viewBox="0 0 1440 80" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-            <path fill="rgba(255,255,255,0.18)"
-              d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z"/>
-          </svg>
+          <p style={{ fontSize: '12px', color: '#5a8060' }}>Built for student wellbeing · 2026</p>
         </div>
 
-        {/* FEATURES */}
-        <section className="lp-features-section">
-          <div className="lp-section-label">What we offer</div>
-          <div className="lp-section-head">
-            <h2>A support system built<br />for student life</h2>
-          </div>
+        {/* RIGHT */}
+        <div className="lp-right">
+          <div className="lp-card">
+            <h2 className="lp-card-title">
+              {mode === 'login' ? 'Welcome back' : 'Join StudentLife'}
+            </h2>
+            <p className="lp-card-sub">
+              {mode === 'login'
+                ? 'Sign in to continue to your dashboard.'
+                : 'Create your account to get started.'}
+            </p>
 
-          <div className="lp-features">
-            <div className="lp-feature-card">
-              <div className="lp-feature-title">Student communities</div>
-              <div className="lp-feature-desc">
-                Connect with student unions and peer groups across campuses to share support and lived experiences.
+            {mode === 'register' && (
+              <div className="lp-tabs">
+                {['student', 'university', 'admin'].map(r => (
+                  <button
+                    key={r}
+                    className={`lp-tab${role === r ? ' active' : ''}`}
+                    onClick={() => setRole(r)}
+                  >
+                    {roleLabels[r]}
+                  </button>
+                ))}
               </div>
+            )}
+
+            {error && <div className="lp-error">{error}</div>}
+
+            {mode === 'register' && role !== 'admin' && (
+              <div className="lp-field">
+                <label className="lp-label">
+                  {role === 'university' ? 'University Name' : 'Full Name'}
+                </label>
+                <input
+                  className="lp-input"
+                  type="text"
+                  placeholder={role === 'university' ? 'e.g. University of Manchester' : 'e.g. Alex Johnson'}
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                />
+              </div>
+            )}
+
+            <div className="lp-field">
+              <label className="lp-label">Email</label>
+              <input
+                className="lp-input"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+              />
             </div>
-            <div className="lp-feature-card">
-              <div className="lp-feature-title">Internships by major</div>
-              <div className="lp-feature-desc">
-                Explore opportunities tailored to your field, reducing the overwhelm of searching without guidance.
-              </div>
+
+            <div className="lp-field">
+              <label className="lp-label">Password</label>
+              <input
+                className="lp-input"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+              />
             </div>
-            <div className="lp-feature-card">
-              <div className="lp-feature-title">Mental health support</div>
-              <div className="lp-feature-desc">
-                Access burnout resources and peer check-ins that help you protect your wellbeing while building your future.
+
+            {mode === 'register' && role === 'admin' && (
+              <div className="lp-field">
+                <label className="lp-label">Admin Registration Secret</label>
+                <input
+                  className="lp-input"
+                  type="password"
+                  placeholder="Enter secret key"
+                  value={adminSecret}
+                  onChange={e => setAdminSecret(e.target.value)}
+                />
               </div>
+            )}
+
+            <button
+              className="lp-btn-primary"
+              onClick={handleSubmit}
+              disabled={loading}
+            >
+              {loading
+                ? 'Please wait...'
+                : mode === 'login'
+                  ? 'Sign In'
+                  : `Create ${roleLabels[role]} Account`}
+            </button>
+
+            {mode === 'login' && (
+              <>
+                <div className="lp-divider">or</div>
+                <button className="lp-btn-google" onClick={handleGoogle}>
+                  <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+                    <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+                    <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+                    <path d="M3.964 10.707A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+                    <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.96L3.964 7.294C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                  </svg>
+                  Continue with Google
+                </button>
+              </>
+            )}
+
+            <div className="lp-toggle">
+              {mode === 'login' ? (
+                <>Don't have an account?{' '}
+                  <button onClick={() => { setMode('register'); setError('') }}>Sign up</button>
+                </>
+              ) : (
+                <>Already have an account?{' '}
+                  <button onClick={() => { setMode('login'); setError('') }}>Sign in</button>
+                </>
+              )}
             </div>
           </div>
-        </section>
-
-        {/* CTA */}
-        <section className="lp-cta-strip">
-          <div className="lp-cta-card">
-            <div>
-              <h3>Find your path.<br />Protect your peace.</h3>
-              <p>
-                Build confidence, discover real opportunities, and connect with a community that truly understands.
-              </p>
-            </div>
-            <div className="lp-cta-actions">
-              <Link to="/dashboard" className="lp-btn primary">Get started →</Link>
-            </div>
-          </div>
-        </section>
-
-        {/* FOOTER */}
-        <footer className="lp-footer">
-          © 2026 StudentLife · <Link to="/about">About</Link> · <Link to="/platform">Platform</Link> · Built for student wellbeing
-        </footer>
+        </div>
 
       </div>
     </>
   )
 }
-
-export default LandingPage
