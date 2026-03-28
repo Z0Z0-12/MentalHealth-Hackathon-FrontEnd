@@ -136,7 +136,8 @@ function LoginForm({ login, navigate }) {
 
 /* ── Register form ── */
 function RegisterForm({ login, navigate }) {
-  const [universities, setUniversities] = useState([])
+  const [universities,    setUniversities]    = useState([])
+  const [univError,       setUnivError]       = useState(false)
   const [form, setForm] = useState({
     first_name: '', last_name: '', email: '', password: '',
     university_id: '', major: '',
@@ -146,8 +147,12 @@ function RegisterForm({ login, navigate }) {
 
   useEffect(() => {
     getUniversities()
-      .then(data => setUniversities(data?.items ?? []))
-      .catch(() => {})
+      .then(data => {
+        const items = data?.items ?? []
+        setUniversities(items)
+        if (items.length === 0) setUnivError(true)
+      })
+      .catch(() => setUnivError(true))
   }, [])
 
   async function handleSubmit(e) {
@@ -184,17 +189,27 @@ function RegisterForm({ login, navigate }) {
       {/* University dropdown */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         <label style={{ fontSize: '11px', fontWeight: 600, color: '#5a8060', fontFamily: "'DM Sans', sans-serif" }}>University</label>
-        <select
-          required
-          value={form.university_id}
-          onChange={e => setForm(p => ({ ...p, university_id: e.target.value }))}
-          style={{ ...inputStyle, background: 'rgba(255,255,255,0.7)' }}
-        >
-          <option value="">Select your university…</option>
-          {universities.map(u => (
-            <option key={u.id} value={u.id}>{u.name}</option>
-          ))}
-        </select>
+        {univError ? (
+          <input
+            required
+            value={form.university_id}
+            onChange={e => setForm(p => ({ ...p, university_id: e.target.value }))}
+            placeholder="Enter your university name"
+            style={inputStyle}
+          />
+        ) : (
+          <select
+            required
+            value={form.university_id}
+            onChange={e => setForm(p => ({ ...p, university_id: e.target.value }))}
+            style={{ ...inputStyle, background: 'rgba(255,255,255,0.7)' }}
+          >
+            <option value="">Select your university…</option>
+            {universities.map(u => (
+              <option key={u.id} value={u.id}>{u.name}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {error && <p style={{ fontSize: '12px', color: '#dc2626', fontFamily: "'DM Sans', sans-serif", margin: 0 }}>{error}</p>}
