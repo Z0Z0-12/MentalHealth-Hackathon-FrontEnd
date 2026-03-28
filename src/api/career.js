@@ -1,13 +1,14 @@
 import { apiFetch } from './config'
 
-// GET /career/listings
-// Expected response: [{ id, title, company, location, type, description }]
-export async function getCareerListings() {
-  return apiFetch('/career/listings')
+// GET /internships/?skip=0&limit=20
+// Returns { items: [...], total, skip, limit }
+export async function getInternships(skip = 0, limit = 20) {
+  return apiFetch(`/internships/?skip=${skip}&limit=${limit}`)
 }
 
-// GET /career/resources
-// Expected response: [{ id, title, type, url }]
-export async function getCareerResources() {
-  return apiFetch('/career/resources')
+// GET /recommendations/me
+// Returns [{ id, internship_title, internship_company, internship_location,
+//            application_url, score, reason, recommended_for_date }]
+export async function getRecommendations() {
+  return apiFetch('/recommendations/me')
 }

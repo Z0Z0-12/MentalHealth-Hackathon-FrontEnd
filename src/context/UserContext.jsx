@@ -1,33 +1,50 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { getMe } from '../api/auth'
+import { getToken } from '../api/config'
 
 const UserContext = createContext(null)
 
-// Wrap the whole app in this so any component can access the logged-in user
+// Normalize whatever shape the backend returns into what our UI expects
+function normalizeUser(raw) {
+  if (!raw) return null
+  const name =
+    raw.name ??
+    (raw.first_name || raw.last_name
+      ? `${raw.first_name ?? ''} ${raw.last_name ?? ''}`.trim()
+      : raw.email)
+  return {
+    ...raw,
+    name,
+    email:  raw.email  ?? null,
+    role:   raw.role   ?? (Array.isArray(raw.roles) ? raw.roles[0] : 'Student'),
+    joined: raw.joined ?? (raw.created_at ? raw.created_at.split('T')[0] : null),
+  }
+}
+
 export function UserProvider({ children }) {
-  const [user, setUser]       = useState(null)   // null = not loaded yet
+  const [user, setUser]       = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // On app load, fetch the current user from the backend
-  // If the backend isn't ready yet, this will silently fail and user stays null
+  // On app load, if a token exists in localStorage try to restore the session
   useEffect(() => {
+    if (!getToken()) {
+      setLoading(false)
+      return
+    }
     getMe()
-      .then(setUser)
-      .catch(() => setUser(null))   // not logged in or backend not up yet
+      .then(raw => setUser(normalizeUser(raw)))
+      .catch(() => setUser(null))
       .finally(() => setLoading(false))
   }, [])
 
-  // Call this after a successful login to update the user globally
   function login(userData) {
-    setUser(userData)
+    setUser(normalizeUser(userData))
   }
 
-  // Call this on logout to clear the user everywhere
   function logout() {
     setUser(null)
   }
 
-  // Call this after updating profile fields
   function updateUser(fields) {
     setUser(prev => ({ ...prev, ...fields }))
   }
@@ -39,7 +56,6 @@ export function UserProvider({ children }) {
   )
 }
 
-// Shortcut hook — any component can call: const { user } = useUser()
 export function useUser() {
   return useContext(UserContext)
 }

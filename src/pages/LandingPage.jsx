@@ -466,7 +466,7 @@ function LandingPage() {
             <li><Link to="/resources">Resources</Link></li>
             <li><Link to="/about">About</Link></li>
           </ul>
-          <Link to="/dashboard" className="lp-nav-cta">Join now →</Link>
+          <Link to="/login" className="lp-nav-cta">Join now →</Link>
         </nav>
 
         {/* TICKER BANNER */}
@@ -495,8 +495,8 @@ function LandingPage() {
             <p className="lp-hero-sub"></p>
 
             <div className="lp-hero-btns">
-              <Link to="/dashboard" className="lp-btn primary">Get started →</Link>
-              <Link to="/dashboard" className="lp-btn secondary">Join a community</Link>
+              <Link to="/login" className="lp-btn primary">Get started →</Link>
+              <Link to="/login" className="lp-btn secondary">Join a community</Link>
             </div>
 
             <div className="lp-trust">
@@ -557,7 +557,7 @@ function LandingPage() {
               </p>
             </div>
             <div className="lp-cta-actions">
-              <Link to="/dashboard" className="lp-btn primary">Get started →</Link>
+              <Link to="/login" className="lp-btn primary">Get started →</Link>
             </div>
           </div>
         </section>

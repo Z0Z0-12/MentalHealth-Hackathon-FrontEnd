@@ -1,13 +1,10 @@
-import { apiFetch } from './config'
+// Notifications endpoint not yet available on the backend.
+// Returns empty array so the UI shows "No notifications yet" gracefully.
 
-// GET /notifications
-// Expected response: [{ id, text, time, read }]
 export async function getNotifications() {
-  return apiFetch('/notifications')
+  return []
 }
 
-// PATCH /notifications/read-all
-// Marks all notifications as read on the backend
 export async function markAllNotificationsRead() {
-  return apiFetch('/notifications/read-all', { method: 'PATCH' })
+  return {}
 }
