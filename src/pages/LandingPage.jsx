@@ -433,7 +433,7 @@ function LandingPage() {
             <li><Link to="/resources">Resources</Link></li>
             <li><Link to="/about">About</Link></li>
           </ul>
-          <button className="lp-nav-cta">Join now →</button>
+          <Link to="/dashboard" className="lp-nav-cta">Join now →</Link>
         </nav>
 
         {/* HERO — split layout */}
@@ -456,8 +456,8 @@ function LandingPage() {
             </p>
 
             <div className="lp-hero-btns">
-              <Link to="/platform" className="lp-btn primary">Get started →</Link>
-              <Link to="/community" className="lp-btn secondary">Join a community</Link>
+              <Link to="/dashboard" className="lp-btn primary">Get started →</Link>
+              <Link to="/dashboard" className="lp-btn secondary">Join a community</Link>
             </div>
 
             <div className="lp-trust">
@@ -523,7 +523,7 @@ function LandingPage() {
               </p>
             </div>
             <div className="lp-cta-actions">
-              <Link to="/platform" className="lp-btn primary">Get started →</Link>
+              <Link to="/dashboard" className="lp-btn primary">Get started →</Link>
             </div>
           </div>
         </section>

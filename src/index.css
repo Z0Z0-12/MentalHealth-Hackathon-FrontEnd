@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,6 +11,7 @@
 }
 
 body {
-  font-family: system-ui, -apple-system, sans-serif;
-  background: #B5D8A0;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: linear-gradient(180deg, #e8f5e2 0%, #d4efc8 40%, #c2e8b0 100%);
+  min-height: 100vh;
 }
