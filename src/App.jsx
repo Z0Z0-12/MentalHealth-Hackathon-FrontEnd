@@ -1,10 +1,10 @@
+import './index.css'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { UserProvider } from './context/UserContext'
 import LandingPage from './pages/LandingPage'
 import Dashboard from './pages/Dashboard'
 import AccountPage from './pages/AccountPage'
 import SettingsPage from './pages/SettingsPage'
-import './index.css'
 
 function App() {
   return (
