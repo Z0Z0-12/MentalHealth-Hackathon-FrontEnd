@@ -11,7 +11,7 @@ const avatarColors = [
   'from-teal-300 to-emerald-400',
 ]
 
-export default function ChatsTab() {
+export default function ChatsTab({ searchQuery = '' }) {
   const [conversations, setConversations] = useState([])
   const [activeId, setActiveId]           = useState(null)
   const [messages, setMessages]           = useState([])
@@ -85,7 +85,7 @@ export default function ChatsTab() {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {conversations.map((convo, i) => (
+          {conversations.filter(c => c.name?.toLowerCase().includes(searchQuery.toLowerCase())).map((convo, i) => (
             <button
               key={convo.id}
               onClick={() => selectConvo(convo.id)}
