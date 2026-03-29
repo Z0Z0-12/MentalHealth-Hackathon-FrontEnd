@@ -14,6 +14,15 @@ export function clearTokens() {
   localStorage.removeItem('refresh_token')
 }
 
+export function getUserId() {
+  const token = getToken()
+  if (!token) return null
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload.sub ?? null
+  } catch { return null }
+}
+
 export async function apiFetch(path, options = {}) {
   const token = getToken()
   const response = await fetch(`${API_BASE_URL}/api/v1${path}`, {
@@ -25,9 +34,31 @@ export async function apiFetch(path, options = {}) {
     ...options,
   })
 
+  const contentType = response.headers.get('content-type') ?? ''
+  const isJson = contentType.includes('application/json')
+
   if (!response.ok) {
-    throw new Error(`API error ${response.status}: ${response.statusText}`)
+    let detail = ''
+    try {
+      if (isJson) {
+        const errorBody = await response.json()
+        if (typeof errorBody?.detail === 'string') {
+          detail = errorBody.detail
+        } else if (Array.isArray(errorBody?.detail)) {
+          detail = errorBody.detail.map(item => item?.msg).filter(Boolean).join(', ')
+        }
+      } else {
+        detail = (await response.text()).trim()
+      }
+    } catch {
+      // fall back to status text when body parsing fails
+    }
+    throw new Error(`API error ${response.status}: ${detail || response.statusText}`)
   }
 
-  return response.json()
+  if (response.status === 204 || response.status === 205) return null
+  if (!isJson) return null
+
+  const text = await response.text()
+  return text ? JSON.parse(text) : null
 }

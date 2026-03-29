@@ -12,3 +12,9 @@ export async function getInternships(skip = 0, limit = 20) {
 export async function getRecommendations() {
   return apiFetch('/recommendations/me')
 }
+
+// POST /internships/sync — fetch external internships into the DB
+// Returns { target_date, fetched, created, updated, deactivated, skipped, recommendations_generated }
+export async function syncInternships() {
+  return apiFetch('/internships/sync', { method: 'POST' })
+}
