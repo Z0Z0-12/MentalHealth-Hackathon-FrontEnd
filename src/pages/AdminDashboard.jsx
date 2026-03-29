@@ -184,7 +184,7 @@ export default function AdminDashboard() {
         <nav className="ad-nav">
           <div className="ad-nav-logo">StudentLife <span>Admin</span></div>
           <div className="ad-nav-right">
-            <span className="ad-nav-user">👋 {user?.email || 'Admin'}</span>
+            <span className="ad-nav-user">{user?.email || 'Admin'}</span>
             <button className="ad-btn-logout" onClick={handleLogout}>Log out</button>
           </div>
         </nav>
@@ -192,7 +192,7 @@ export default function AdminDashboard() {
         <div className="ad-body">
           <aside className="ad-sidebar">
             <div className="ad-sidebar-label">Navigation</div>
-            {tabs.map(t => (
+           {tabs.map(t => (
               <button key={t.id} className={`ad-tab${activeTab === t.id ? ' active' : ''}`} onClick={() => setActiveTab(t.id)}>
                 <span style={{ fontSize: 16 }}>{t.icon}</span>{t.label}
               </button>
@@ -228,7 +228,7 @@ function StatsTab() {
     <>
       <div className="ad-page-title">Overview</div>
       <div className="ad-page-sub">Platform health at a glance — {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
-      {error && <div className="ad-error">⚠️ {error} — make sure you're logged in as admin and the backend is running.</div>}
+      {error && <div className="ad-error">{error} — make sure you're logged in as admin and the backend is running.</div>}
       {loading ? <div className="ad-loading">Loading stats…</div> : stats && (
         <>
           <div className="ad-stats">
@@ -428,7 +428,7 @@ function InternshipsTab() {
     <>
       <div className="ad-page-title">Internships</div>
       <div className="ad-page-sub">Post and manage internship listings for students.</div>
-      {error && <div className="ad-error">⚠️ {error}</div>}
+      {error && <div className="ad-error">{error}</div>}
 
       <div className="ad-card">
         <div className="ad-card-header">
