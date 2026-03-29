@@ -182,7 +182,7 @@ export default function AdminDashboard() {
 
       <div className="ad-root">
         <nav className="ad-nav">
-          <div className="ad-nav-logo">StudentLife <span>Admin</span></div>
+          <div className="ad-nav-logo">Zenora <span>Admin</span></div>
           <div className="ad-nav-right">
             <span className="ad-nav-user">{user?.email || 'Admin'}</span>
             <button className="ad-btn-logout" onClick={handleLogout}>Log out</button>

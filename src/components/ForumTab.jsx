@@ -145,20 +145,26 @@ export default function ForumTab() {
       {showNewPost && <NewPostForm onCreated={onPostCreated} onCancel={() => setShowNewPost(false)} />}
 
       {/* category filter pills */}
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         {CATEGORIES.map(cat => {
           const active = filterCat === cat
-          const s = CAT_STYLE[cat]
           return (
             <button
               key={cat}
               onClick={() => handleFilterChange(cat)}
               style={{
-                padding: '3px 10px', borderRadius: '999px', fontSize: '11px', cursor: 'pointer',
-                fontFamily: "'DM Sans', sans-serif", fontWeight: active ? 700 : 400, border: 'none',
-                background: active ? s.color : s.bg,
-                color: active ? '#fff' : s.color,
-                transition: 'all 0.15s',
+                padding: '8px 18px',
+                borderRadius: '12px',
+                fontSize: '13px',
+                fontWeight: active ? 700 : 500,
+                fontFamily: "'DM Sans', sans-serif",
+                cursor: 'pointer',
+                border: active ? '2px solid rgba(10,42,15,0.25)' : '2px solid transparent',
+                background: active ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.45)',
+                color: active ? '#0a2a0f' : '#5a8060',
+                boxShadow: active ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.15s ease',
+                textTransform: 'capitalize',
               }}
             >
               {cat}

@@ -459,13 +459,7 @@ function LandingPage() {
 
         {/* NAV */}
         <nav className={`lp-nav${scrolled ? ' scrolled' : ''}`}>
-          <Link to="/" className="lp-nav-logo">StudentLife</Link>
-          <ul className="lp-nav-links">
-            <li><Link to="/platform">Platform</Link></li>
-            <li><Link to="/community">Community</Link></li>
-            <li><Link to="/resources">Resources</Link></li>
-            <li><Link to="/about">About</Link></li>
-          </ul>
+          <Link to="/" className="lp-nav-logo">Zenora</Link>
           <Link to="/login" className="lp-nav-cta">Join now →</Link>
         </nav>
 
@@ -564,7 +558,7 @@ function LandingPage() {
 
         {/* FOOTER */}
         <footer className="lp-footer">
-          © 2026 StudentLife · <Link to="/about">About</Link> · <Link to="/platform">Platform</Link> · Built for student wellbeing
+          © 2026 Zenora · Built for student wellbeing
         </footer>
 
       </div>

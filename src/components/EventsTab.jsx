@@ -105,9 +105,7 @@ export default function EventsTab() {
   const [loading,     setLoading]     = useState(true)
   const [error,       setError]       = useState(null)
 
-  const [modeFilter,  setModeFilter]  = useState(null)   // null = all
-  const [search,      setSearch]      = useState('')
-  const [upcomingOnly, setUpcomingOnly] = useState(true)
+  const [search, setSearch] = useState('')
 
   const [showForm,    setShowForm]    = useState(false)
   const [editingEvent, setEditingEvent] = useState(null)  // null = create, event = edit
@@ -122,17 +120,13 @@ export default function EventsTab() {
   function loadEvents() {
     setLoading(true)
     setError(null)
-    getEvents({
-      upcomingOnly,
-      mode: modeFilter || undefined,
-      limit: 50,
-    })
+    getEvents({ upcomingOnly: true, limit: 50 })
       .then(data => setEvents(Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : []))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { loadEvents() }, [modeFilter, upcomingOnly]) // eslint-disable-line
+  useEffect(() => { loadEvents() }, []) // eslint-disable-line
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -203,11 +197,6 @@ export default function EventsTab() {
           Upcoming Events
         </span>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', userSelect: 'none' }}>
-            <input type="checkbox" checked={upcomingOnly} onChange={e => setUpcomingOnly(e.target.checked)}
-              style={{ accentColor: '#4a7c59', width: '13px', height: '13px' }} />
-            <span style={{ fontSize: '11px', color: '#5a8060', fontFamily: "'DM Sans', sans-serif" }}>Upcoming only</span>
-          </label>
           {canHost && (
             <button
               onClick={() => showForm ? setShowForm(false) : openCreate()}
@@ -232,25 +221,6 @@ export default function EventsTab() {
           onCancel={() => { setShowForm(false); setEditingEvent(null) }}
         />
       )}
-
-      {/* mode filter pills */}
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-        {[null, ...MODES].map(m => {
-          const active = modeFilter === m
-          const s = m ? MODE_STYLE[m] : { bg: '#f0f7f0', color: '#3d7a4f', label: 'All' }
-          return (
-            <button key={m ?? 'all'} onClick={() => setModeFilter(m)}
-              style={{
-                padding: '3px 12px', borderRadius: '999px', fontSize: '11px', cursor: 'pointer',
-                fontFamily: "'DM Sans', sans-serif", fontWeight: active ? 700 : 400, border: 'none',
-                background: active ? s.color : s.bg, color: active ? '#fff' : s.color,
-              }}
-            >
-              {s.label}
-            </button>
-          )
-        })}
-      </div>
 
       {/* search */}
       <div style={{

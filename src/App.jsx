@@ -9,7 +9,7 @@ import SettingsPage from './pages/SettingsPage'
 import AdminDashboard from './pages/AdminDashboard'
 function App() {
   return (
-    <UserProvider>å
+    <UserProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/"          element={<LandingPage />} />

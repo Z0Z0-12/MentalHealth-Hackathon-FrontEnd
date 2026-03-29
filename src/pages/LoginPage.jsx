@@ -43,7 +43,7 @@ export default function LoginPage() {
           fontFamily: "'Playfair Display', serif", fontWeight: 900, fontSize: '26px',
           color: '#0a2a0f', textDecoration: 'none', marginBottom: '28px', letterSpacing: '-0.6px',
         }}>
-          StudentLife
+          Zenora
         </Link>
 
         <div style={{
@@ -154,7 +154,7 @@ function RegisterForm({ login, navigate }) {
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '22px', fontWeight: 900, color: '#0a2a0f', margin: 0 }}>
-        Join StudentLife
+        Join Zenora
       </h2>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
         <Field label="First name" value={form.first_name} onChange={e => setForm(p => ({ ...p, first_name: e.target.value }))} placeholder="Jane" required />
