@@ -3,25 +3,31 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useUser } from '../context/UserContext'
 import { login as apiLogin, registerStudent, getMe, getUniversities } from '../api/auth'
 
+function redirectByRole(role, navigate) {
+  if (role === 'admin')           navigate('/dashboard/admin')
+  else if (role === 'university') navigate('/dashboard/university')
+  else                            navigate('/dashboard')
+}
+
 export default function LoginPage() {
   const { login, user } = useUser()
   const navigate        = useNavigate()
-  const [mode, setMode] = useState('login')   // 'login' | 'register'
+  const [mode, setMode] = useState('login')
 
-  // If already logged in, go straight to dashboard
+  // If already logged in, redirect to the right dashboard
   useEffect(() => {
-    if (user) navigate('/dashboard')
+    if (user) redirectByRole(user.role, navigate)
   }, [user, navigate])
 
   return (
     <div style={{
-      minHeight:  '100vh',
-      background: 'linear-gradient(180deg, #e8f5e2 0%, #d4efc8 40%, #c2e8b0 100%)',
-      display:    'flex',
-      alignItems: 'center',
+      minHeight:      '100vh',
+      background:     'linear-gradient(180deg, #e8f5e2 0%, #d4efc8 40%, #c2e8b0 100%)',
+      display:        'flex',
+      alignItems:     'center',
       justifyContent: 'center',
-      padding:    '24px',
-      position:   'relative',
+      padding:        '24px',
+      position:       'relative',
     }}>
       {/* Waves */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 0, pointerEvents: 'none' }}>
@@ -35,12 +41,12 @@ export default function LoginPage() {
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '420px' }}>
         {/* Logo */}
         <Link to="/" style={{
-          display:    'block',
-          textAlign:  'center',
-          fontFamily: "'Playfair Display', serif",
-          fontWeight: 900,
-          fontSize:   '26px',
-          color:      '#0a2a0f',
+          display:        'block',
+          textAlign:      'center',
+          fontFamily:     "'Playfair Display', serif",
+          fontWeight:     900,
+          fontSize:       '26px',
+          color:          '#0a2a0f',
           textDecoration: 'none',
           marginBottom:   '28px',
           letterSpacing:  '-0.6px',
@@ -108,7 +114,7 @@ function LoginForm({ login, navigate }) {
       await apiLogin(email, password)
       const me = await getMe()
       login(me)
-      navigate('/dashboard')
+      redirectByRole(me.role, navigate)
     } catch (err) {
       setError(err.message.includes('401') ? 'Invalid email or password.' : err.message)
     } finally {
@@ -136,8 +142,8 @@ function LoginForm({ login, navigate }) {
 
 /* ── Register form ── */
 function RegisterForm({ login, navigate }) {
-  const [universities,    setUniversities]    = useState([])
-  const [univError,       setUnivError]       = useState(false)
+  const [universities, setUniversities] = useState([])
+  const [univError,    setUnivError]    = useState(false)
   const [form, setForm] = useState({
     first_name: '', last_name: '', email: '', password: '',
     university_id: '', major: '',
@@ -163,7 +169,7 @@ function RegisterForm({ login, navigate }) {
       await registerStudent({ ...form, skills: [], interests: [] })
       const me = await getMe()
       login(me)
-      navigate('/dashboard')
+      redirectByRole(me.role, navigate)
     } catch (err) {
       setError(err.message.includes('422') ? 'Please check all fields.' : err.message)
     } finally {

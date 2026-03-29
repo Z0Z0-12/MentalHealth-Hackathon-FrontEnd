@@ -6,10 +6,10 @@ import LoginPage from './pages/LoginPage'
 import Dashboard from './pages/Dashboard'
 import AccountPage from './pages/AccountPage'
 import SettingsPage from './pages/SettingsPage'
-
+import AdminDashboard from './pages/AdminDashboard'
 function App() {
   return (
-    <UserProvider>
+    <UserProvider>å
       <BrowserRouter>
         <Routes>
           <Route path="/"          element={<LandingPage />} />
@@ -18,6 +18,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/account"   element={<AccountPage />} />
           <Route path="/settings"  element={<SettingsPage />} />
+          <Route path="/dashboard/admin" element ={<AdminDashboard />} />
         </Routes>
       </BrowserRouter>
     </UserProvider>
