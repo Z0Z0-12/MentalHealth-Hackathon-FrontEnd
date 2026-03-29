@@ -63,3 +63,48 @@ export async function getMyRsvp(eventId) {
 export async function getEventAttendees(eventId) {
   return apiFetch(`/events/${eventId}/attendees`)
 }
+
+// GET /events/{event_id}/images
+export async function getEventImages(eventId) {
+  return apiFetch(`/events/${eventId}/images`)
+}
+
+// POST /events/{event_id}/banner — multipart upload
+export async function uploadBanner(eventId, file) {
+  const { API_BASE_URL, getToken } = await import('./config')
+  const token = getToken()
+  const form = new FormData()
+  form.append('file', file)
+  const res = await fetch(`${API_BASE_URL}/api/v1/events/${eventId}/banner`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  })
+  if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
+  return res.json()
+}
+
+// DELETE /events/{event_id}/banner
+export async function deleteBanner(eventId) {
+  return apiFetch(`/events/${eventId}/banner`, { method: 'DELETE' })
+}
+
+// POST /events/{event_id}/images — multipart upload (multiple files)
+export async function uploadEventImages(eventId, files) {
+  const { API_BASE_URL, getToken } = await import('./config')
+  const token = getToken()
+  const form = new FormData()
+  Array.from(files).forEach(f => form.append('files', f))
+  const res = await fetch(`${API_BASE_URL}/api/v1/events/${eventId}/images`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  })
+  if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
+  return res.json()
+}
+
+// DELETE /events/{event_id}/images/{image_index}
+export async function deleteEventImage(eventId, imageIndex) {
+  return apiFetch(`/events/${eventId}/images/${imageIndex}`, { method: 'DELETE' })
+}

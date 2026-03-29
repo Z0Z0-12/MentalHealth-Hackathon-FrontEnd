@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import {
-  MapPin, Video, Users, Plus, X, ChevronDown, ChevronUp,
-  Calendar, Clock, Tag, ExternalLink, Loader2, LayoutList, Edit3,
+  MapPin, Video, Users, Plus, X,
+  Calendar, Clock, Tag, ExternalLink, LayoutList, Edit3, Loader2,
 } from 'lucide-react'
 import {
   getEvents, createEvent, updateEvent,
-  rsvpEvent, cancelRsvp, getEventAttendees,
+  rsvpEvent, cancelRsvp,
 } from '../api/events'
 import { useUser } from '../context/UserContext'
 
@@ -110,9 +111,8 @@ export default function EventsTab() {
   const [showForm,    setShowForm]    = useState(false)
   const [editingEvent, setEditingEvent] = useState(null)  // null = create, event = edit
 
-  // expanded post id + attendees cache
-  const [openId,      setOpenId]      = useState(null)
-  const [attendeesMap, setAttendeesMap] = useState({})
+  // modal
+  const [modalEvent, setModalEvent] = useState(null)
 
   // RSVP success calendar url
   const [calendarUrl, setCalendarUrl] = useState(null)
@@ -148,26 +148,13 @@ export default function EventsTab() {
         const res = await rsvpEvent(event.id)
         setCalendarUrl(res?.google_calendar_url ?? null)
       }
-      // optimistic update
-      setEvents(prev => prev.map(e => e.id === event.id
-        ? { ...e, my_rsvp_status: attending ? null : 'confirmed', rsvp_count: (e.rsvp_count ?? 0) + (attending ? -1 : 1) }
-        : e
-      ))
+      const updated = { ...event, my_rsvp_status: attending ? null : 'confirmed', rsvp_count: (event.rsvp_count ?? 0) + (attending ? -1 : 1) }
+      setEvents(prev => prev.map(e => e.id === event.id ? updated : e))
+      // keep modal in sync
+      if (modalEvent?.id === event.id) setModalEvent(updated)
     } catch (err) {
       setError(err.message)
     }
-  }
-
-  // ── toggle expand + load attendees ─────────────────────────────────────────
-  async function handleToggle(event) {
-    if (openId === event.id) { setOpenId(null); return }
-    setOpenId(event.id)
-    const canSeeAttendees = isAdmin || String(event.hosted_by) === String(user?.id)
-    if (!canSeeAttendees || attendeesMap[event.id]) return
-    try {
-      const data = await getEventAttendees(event.id)
-      setAttendeesMap(prev => ({ ...prev, [event.id]: data?.attendees ?? [] }))
-    } catch { /* silent */ }
   }
 
   // ── form submit ────────────────────────────────────────────────────────────
@@ -190,6 +177,22 @@ export default function EventsTab() {
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+      {/* event detail modal — rendered via portal so it escapes any parent stacking context */}
+      {modalEvent && createPortal(
+        <EventModal
+          event={modalEvent}
+          canEdit={isAdmin || String(modalEvent.hosted_by) === String(user?.id)}
+          onClose={() => setModalEvent(null)}
+          onRsvp={() => handleRsvp(modalEvent)}
+          onEdit={() => { setModalEvent(null); openEdit(modalEvent); setShowForm(true) }}
+          onUpdated={updated => {
+            setEvents(prev => prev.map(e => e.id === updated.id ? updated : e))
+            setModalEvent(updated)
+          }}
+        />,
+        document.body
+      )}
 
       {/* header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -268,12 +271,8 @@ export default function EventsTab() {
             <EventCard
               key={event.id}
               event={event}
-              isOpen={openId === event.id}
-              attendees={attendeesMap[event.id]}
               canEdit={isAdmin || String(event.hosted_by) === String(user?.id)}
-              isAdmin={isAdmin}
-              userId={user?.id}
-              onToggle={() => handleToggle(event)}
+              onOpenModal={() => setModalEvent(event)}
               onRsvp={() => handleRsvp(event)}
               onEdit={() => { openEdit(event); setShowForm(true) }}
             />
@@ -286,19 +285,29 @@ export default function EventsTab() {
 
 // ─── EventCard ────────────────────────────────────────────────────────────────
 
-function EventCard({ event, isOpen, attendees, canEdit, onToggle, onRsvp, onEdit }) {
-  const badge    = dateBadge(event.start_at)
+function EventCard({ event, canEdit, onOpenModal, onRsvp, onEdit }) {
+  const badge     = dateBadge(event.start_at)
   const attending = !!event.my_rsvp_status
-  const ms       = MODE_STYLE[event.mode] ?? MODE_STYLE.virtual
+  const ms        = MODE_STYLE[event.mode] ?? MODE_STYLE.virtual
   const isVirtual = event.mode === 'virtual'
 
   return (
-    <div style={{
-      background: 'rgba(255,255,255,0.65)', borderRadius: '16px',
-      border: '1px solid rgba(10,42,15,0.07)', backdropFilter: 'blur(4px)',
-      overflow: 'hidden',
-    }}>
-      {/* main row */}
+    <div
+      onClick={onOpenModal}
+      style={{
+        background: 'rgba(255,255,255,0.65)', borderRadius: '16px',
+        border: '1px solid rgba(10,42,15,0.07)', backdropFilter: 'blur(4px)',
+        overflow: 'hidden', cursor: 'pointer',
+        transition: 'box-shadow 0.15s ease',
+      }}
+      onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 20px rgba(10,42,15,0.1)'}
+      onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+    >
+      {/* banner thumbnail if exists */}
+      {event.banner_url && (
+        <img src={event.banner_url} alt="" style={{ width: '100%', height: '100px', objectFit: 'cover' }} />
+      )}
+
       <div style={{ display: 'flex', gap: '12px', padding: '14px' }}>
         {/* date block */}
         <div style={{
@@ -307,12 +316,8 @@ function EventCard({ event, isOpen, attendees, canEdit, onToggle, onRsvp, onEdit
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           justifyContent: 'center', padding: '8px 4px',
         }}>
-          <span style={{ fontSize: '9px', color: '#b9e4b7', fontFamily: "'DM Sans', sans-serif", fontWeight: 700 }}>
-            {badge.month}
-          </span>
-          <span style={{ fontSize: '22px', color: '#fff', fontFamily: "'Playfair Display', serif", fontWeight: 800, lineHeight: 1 }}>
-            {badge.day}
-          </span>
+          <span style={{ fontSize: '9px', color: '#b9e4b7', fontFamily: "'DM Sans', sans-serif", fontWeight: 700 }}>{badge.month}</span>
+          <span style={{ fontSize: '22px', color: '#fff', fontFamily: "'Playfair Display', serif", fontWeight: 800, lineHeight: 1 }}>{badge.day}</span>
         </div>
 
         {/* info */}
@@ -326,9 +331,7 @@ function EventCard({ event, isOpen, attendees, canEdit, onToggle, onRsvp, onEdit
             </span>
           </div>
 
-          <p style={{ margin: 0, fontSize: '11px', color: '#5a8060', fontFamily: "'DM Sans', sans-serif" }}>
-            {event.organizer_name}
-          </p>
+          <p style={{ margin: 0, fontSize: '11px', color: '#5a8060', fontFamily: "'DM Sans', sans-serif" }}>{event.organizer_name}</p>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#6b7280', fontFamily: "'DM Sans', sans-serif" }}>
@@ -343,7 +346,6 @@ function EventCard({ event, isOpen, attendees, canEdit, onToggle, onRsvp, onEdit
             </span>
           </div>
 
-          {/* tags */}
           {(event.tags ?? []).length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
               {event.tags.slice(0, 3).map(tag => (
@@ -359,10 +361,9 @@ function EventCard({ event, isOpen, attendees, canEdit, onToggle, onRsvp, onEdit
             </div>
           )}
 
-          {/* action row */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
             <button
-              onClick={onRsvp}
+              onClick={e => { e.stopPropagation(); onRsvp() }}
               style={{
                 fontSize: '11px', fontWeight: 700, padding: '5px 14px', borderRadius: '999px', border: 'none', cursor: 'pointer',
                 background: attending ? '#0a2a0f' : 'transparent',
@@ -374,74 +375,200 @@ function EventCard({ event, isOpen, attendees, canEdit, onToggle, onRsvp, onEdit
               {attending ? 'Going ✓' : 'RSVP'}
             </button>
             {canEdit && (
-              <button onClick={onEdit} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontFamily: "'DM Sans', sans-serif" }}>
+              <button onClick={e => { e.stopPropagation(); onEdit() }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontFamily: "'DM Sans', sans-serif" }}>
                 <Edit3 size={12} /> Edit
               </button>
             )}
-            <button onClick={onToggle} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: isOpen ? '#4a7c59' : '#9ca3af', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontFamily: "'DM Sans', sans-serif" }}>
-              {isOpen ? <><ChevronUp size={13} /> Less</> : <><ChevronDown size={13} /> Details</>}
-            </button>
+            <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#9ca3af', fontFamily: "'DM Sans', sans-serif" }}>
+              View details →
+            </span>
           </div>
         </div>
       </div>
+    </div>
+  )
+}
 
-      {/* expanded details */}
-      {isOpen && (
-        <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <p style={{ margin: 0, fontSize: '13px', color: '#374151', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6 }}>
-            {event.description}
+// ─── EventModal ───────────────────────────────────────────────────────────────
+
+function EventModal({ event, canEdit, onClose, onRsvp, onEdit }) {
+  const attending = !!event.my_rsvp_status
+  const ms        = MODE_STYLE[event.mode] ?? MODE_STYLE.virtual
+  const isVirtual = event.mode === 'virtual'
+  const badge     = dateBadge(event.start_at)
+
+  // close on Escape + lock body scroll
+  useEffect(() => {
+    const handler = e => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', handler)
+      document.body.style.overflow = ''
+    }
+  }, [onClose])
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 200,
+        background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '20px',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: '#f0f9f0',
+          borderRadius: '20px',
+          width: '480px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.3)',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {/* header band */}
+        <div style={{
+          background: event.banner_url
+            ? `linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0.65)), url(${event.banner_url}) center/cover no-repeat`
+            : 'linear-gradient(135deg,#0a2a0f,#1a5c28)',
+          borderRadius: '20px 20px 0 0',
+          padding: '24px 20px 20px',
+          position: 'relative',
+        }}>
+          {/* close */}
+          <button onClick={onClose} style={{
+            position: 'absolute', top: '14px', right: '14px',
+            background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%',
+            width: '28px', height: '28px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
+          }}>
+            <X size={14} />
+          </button>
+
+          {/* date + mode badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+            <div style={{
+              width: '48px', borderRadius: '10px', background: 'rgba(255,255,255,0.12)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '6px 4px',
+            }}>
+              <span style={{ fontSize: '9px', color: '#b9e4b7', fontFamily: "'DM Sans', sans-serif", fontWeight: 700 }}>{badge.month}</span>
+              <span style={{ fontSize: '20px', color: '#fff', fontFamily: "'Playfair Display', serif", fontWeight: 800, lineHeight: 1 }}>{badge.day}</span>
+            </div>
+            <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '999px', background: ms.bg, color: ms.color, fontFamily: "'DM Sans', sans-serif" }}>
+              {ms.label}
+            </span>
+          </div>
+
+          {/* title */}
+          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: '#fff', fontFamily: "'Playfair Display', serif", lineHeight: 1.3 }}>
+            {event.title}
+          </h2>
+          <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.65)', fontFamily: "'DM Sans', sans-serif" }}>
+            by {event.organizer_name}
           </p>
+        </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            <InfoRow label="Start"  value={`${fmtDate(event.start_at)} ${fmtTime(event.start_at)}`} />
-            <InfoRow label="End"    value={`${fmtDate(event.end_at)} ${fmtTime(event.end_at)}`} />
-            {event.location   && <InfoRow label="Location"    value={event.location} />}
+        {/* body */}
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+          {/* key info grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: '12px', padding: '12px' }}>
+              <p style={{ margin: '0 0 3px', fontSize: '10px', color: '#9ca3af', fontFamily: "'DM Sans', sans-serif" }}>Date & Time</p>
+              <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: '#0a2a0f', fontFamily: "'DM Sans', sans-serif" }}>
+                {fmtDate(event.start_at)}
+              </p>
+              <p style={{ margin: 0, fontSize: '11px', color: '#5a8060', fontFamily: "'DM Sans', sans-serif" }}>
+                {fmtTime(event.start_at)} – {fmtTime(event.end_at)}
+              </p>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: '12px', padding: '12px' }}>
+              <p style={{ margin: '0 0 3px', fontSize: '10px', color: '#9ca3af', fontFamily: "'DM Sans', sans-serif" }}>Location</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                {isVirtual ? <Video size={12} style={{ color: '#5a8060', flexShrink: 0 }} /> : <MapPin size={12} style={{ color: '#5a8060', flexShrink: 0 }} />}
+                <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: '#0a2a0f', fontFamily: "'DM Sans', sans-serif" }}>
+                  {isVirtual ? 'Online' : (event.location || 'TBA')}
+                </p>
+              </div>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: '12px', padding: '12px' }}>
+              <p style={{ margin: '0 0 3px', fontSize: '10px', color: '#9ca3af', fontFamily: "'DM Sans', sans-serif" }}>Attendees</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Users size={12} style={{ color: '#5a8060' }} />
+                <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: '#0a2a0f', fontFamily: "'DM Sans', sans-serif" }}>
+                  {event.rsvp_count ?? 0} going
+                </p>
+              </div>
+            </div>
             {event.meeting_url && (
-              <div>
-                <p style={{ margin: 0, fontSize: '10px', color: '#9ca3af', fontFamily: "'DM Sans', sans-serif" }}>Meeting Link</p>
+              <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: '12px', padding: '12px' }}>
+                <p style={{ margin: '0 0 3px', fontSize: '10px', color: '#9ca3af', fontFamily: "'DM Sans', sans-serif" }}>Meeting Link</p>
                 <a href={event.meeting_url} target="_blank" rel="noreferrer"
-                  style={{ fontSize: '12px', color: '#2563eb', fontFamily: "'DM Sans', sans-serif", display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: '#2563eb', fontFamily: "'DM Sans', sans-serif", textDecoration: 'none' }}>
                   Join <ExternalLink size={10} />
                 </a>
               </div>
             )}
           </div>
 
-          {/* attendees (organizer / admin only) */}
-          {canEdit && (
-            <div>
-              <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: 700, color: '#3a6040', fontFamily: "'DM Sans', sans-serif" }}>
-                Attendees ({(attendees ?? []).length})
-              </p>
-              {!attendees ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Loader2 size={12} className="animate-spin" style={{ color: '#9ca3af' }} />
-                  <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: "'DM Sans', sans-serif" }}>Loading…</span>
-                </div>
-              ) : attendees.length === 0 ? (
-                <p style={{ fontSize: '12px', color: '#9ca3af', fontFamily: "'DM Sans', sans-serif", margin: 0 }}>No RSVPs yet.</p>
-              ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {attendees.map(a => (
-                    <span key={a.user_id} style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '999px', background: 'rgba(10,42,15,0.06)', color: '#3a6040', fontFamily: "'DM Sans', sans-serif" }}>
-                      {a.user_id.slice(0, 8)}… · {a.status}
-                    </span>
-                  ))}
-                </div>
-              )}
+          {/* description */}
+          <div>
+            <p style={{ margin: '0 0 6px', fontSize: '10px', fontWeight: 700, color: '#9ca3af', fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '0.5px' }}>About</p>
+            <p style={{ margin: 0, fontSize: '13px', color: '#374151', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.7 }}>
+              {event.description}
+            </p>
+          </div>
+
+          {/* tags */}
+          {(event.tags ?? []).length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+              {event.tags.map(tag => (
+                <span key={tag} style={{
+                  fontSize: '11px', padding: '3px 9px', borderRadius: '999px',
+                  background: 'rgba(10,42,15,0.07)', color: '#3a6040',
+                  fontFamily: "'DM Sans', sans-serif", display: 'flex', alignItems: 'center', gap: '3px',
+                }}>
+                  <Tag size={9} />{tag}
+                </span>
+              ))}
             </div>
           )}
-        </div>
-      )}
-    </div>
-  )
-}
 
-function InfoRow({ label, value }) {
-  return (
-    <div>
-      <p style={{ margin: 0, fontSize: '10px', color: '#9ca3af', fontFamily: "'DM Sans', sans-serif" }}>{label}</p>
-      <p style={{ margin: 0, fontSize: '12px', color: '#1f2937', fontFamily: "'DM Sans', sans-serif" }}>{value}</p>
+          {/* actions */}
+          <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
+            <button
+              onClick={onRsvp}
+              style={{
+                flex: 1, padding: '12px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                background: attending ? '#0a2a0f' : '#4a7c59',
+                color: attending ? '#dff89a' : '#fff',
+                fontSize: '13px', fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              {attending ? '✓ Going — Cancel RSVP' : 'RSVP to this event'}
+            </button>
+            {canEdit && (
+              <button
+                onClick={onEdit}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  padding: '12px 16px', borderRadius: '12px',
+                  border: '1px solid rgba(10,42,15,0.15)', background: 'rgba(255,255,255,0.6)',
+                  color: '#3a6040', fontSize: '12px', fontWeight: 600,
+                  cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                <Edit3 size={13} /> Edit
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
