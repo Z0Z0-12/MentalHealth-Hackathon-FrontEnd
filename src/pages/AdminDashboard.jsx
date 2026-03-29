@@ -409,6 +409,7 @@ function InternshipsTab() {
         majors:   form.majors.split(',').map(s => s.trim()).filter(Boolean),
         keywords: form.keywords.split(',').map(s => s.trim()).filter(Boolean),
         is_active: true,
+        source_type: 'manual',
       }
       const res = await fetch(`${BASE_URL}/api/v1/internships/`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(payload),
