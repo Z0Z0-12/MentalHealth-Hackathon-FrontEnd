@@ -6,6 +6,14 @@ import {
 } from 'lucide-react'
 import { getApartments, createApartment } from '../api/housing'
 
+// ─── static housing photos (cycled across listings) ──────────────────────────
+
+const HOUSING_PHOTOS = [
+  '/Photo1.jpg', '/Photo2.jpeg', '/Photo3.avif', '/Photo4.jpg',
+  '/Photo5.jpg', '/Photo6.jpg',  '/Photo7.webp', '/Photo8.jpg',
+  '/Photo9.webp', '/Photo10.webp', '/Photo11.jpg', '/Photo12.jpg',
+]
+
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 12
@@ -207,7 +215,7 @@ export default function HousingTab() {
             {search ? `${filtered.length} result${filtered.length !== 1 ? 's' : ''}` : `${total} listing${total !== 1 ? 's' : ''}`}
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {filtered.map(apt => <ApartmentCard key={apt.id} apt={apt} />)}
+            {filtered.map((apt, i) => <ApartmentCard key={apt.id} apt={apt} photoIndex={i} />)}
           </div>
 
           {hasMore && !search && (
@@ -233,16 +241,52 @@ export default function HousingTab() {
 
 // ─── ApartmentCard ────────────────────────────────────────────────────────────
 
-function ApartmentCard({ apt }) {
+function ApartmentCard({ apt, photoIndex }) {
   const [expanded, setExpanded] = useState(false)
+  const photo = HOUSING_PHOTOS[photoIndex % HOUSING_PHOTOS.length]
 
   return (
     <div style={{
       background: 'rgba(255,255,255,0.65)', borderRadius: '16px',
       border: '1px solid rgba(10,42,15,0.07)', backdropFilter: 'blur(4px)',
+      overflow: 'hidden',
     }}>
-      {/* main content */}
-      <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {/* card body: image left, content right */}
+      <div style={{ display: 'flex', flexDirection: 'row' }}>
+
+        {/* image column */}
+        <div style={{ position: 'relative', width: '170px', flexShrink: 0, overflow: 'hidden', borderRadius: '16px 0 0 16px' }}>
+          <img
+            src={photo} alt={apt.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+          {/* rent badge */}
+          <div style={{
+            position: 'absolute', bottom: '8px', left: '50%', transform: 'translateX(-50%)',
+            background: 'rgba(10,42,15,0.82)', backdropFilter: 'blur(6px)',
+            borderRadius: '999px', padding: '3px 9px', whiteSpace: 'nowrap',
+            display: 'flex', alignItems: 'center', gap: '3px',
+          }}>
+            <DollarSign size={10} style={{ color: '#dff89a' }} />
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#dff89a', fontFamily: "'DM Sans', sans-serif" }}>
+              {fmtRent(apt.monthly_rent)}
+            </span>
+          </div>
+          {/* furnished badge */}
+          {apt.is_furnished && (
+            <span style={{
+              position: 'absolute', top: '8px', left: '50%', transform: 'translateX(-50%)',
+              fontSize: '9px', fontWeight: 600, background: 'rgba(22,163,74,0.85)',
+              color: '#fff', borderRadius: '999px', padding: '2px 7px', whiteSpace: 'nowrap',
+              fontFamily: "'DM Sans', sans-serif",
+            }}>
+              Furnished
+            </span>
+          )}
+        </div>
+
+        {/* main content */}
+        <div style={{ flex: 1, minWidth: 0, padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
 
         {/* title + badges */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
@@ -250,11 +294,6 @@ function ApartmentCard({ apt }) {
             {apt.title}
           </p>
           <div style={{ display: 'flex', gap: '5px', flexShrink: 0 }}>
-            {apt.is_furnished && (
-              <span style={{ fontSize: '10px', fontWeight: 600, background: 'rgba(22,163,74,0.12)', color: '#16a34a', borderRadius: '999px', padding: '2px 8px', fontFamily: "'DM Sans', sans-serif" }}>
-                Furnished
-              </span>
-            )}
             {apt.is_available === false && (
               <span style={{ fontSize: '10px', fontWeight: 600, background: '#fee2e2', color: '#dc2626', borderRadius: '999px', padding: '2px 8px', fontFamily: "'DM Sans', sans-serif" }}>
                 Unavailable
@@ -271,14 +310,8 @@ function ApartmentCard({ apt }) {
           </span>
         </div>
 
-        {/* rent + beds + baths */}
+        {/* beds + baths */}
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <DollarSign size={12} style={{ color: '#16a34a' }} />
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#16a34a', fontFamily: "'DM Sans', sans-serif" }}>
-              {fmtRent(apt.monthly_rent)}
-            </span>
-          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <BedDouble size={11} style={{ color: '#5a8060' }} />
             <span style={{ fontSize: '11px', color: '#5a8060', fontFamily: "'DM Sans', sans-serif" }}>
@@ -322,10 +355,11 @@ function ApartmentCard({ apt }) {
           }}>
             {expanded ? <><ChevronUp size={13} /> Less</> : <><ChevronDown size={13} /> More details</>}
           </button>
-        </div>
-      </div>
+        </div>{/* footer row */}
+        </div>{/* end content */}
+      </div>{/* end row */}
 
-      {/* expanded details */}
+      {/* expanded details — full width below */}
       {expanded && (
         <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {/* full description */}
