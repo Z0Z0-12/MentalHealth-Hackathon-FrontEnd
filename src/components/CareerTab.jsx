@@ -117,8 +117,8 @@ export default function CareerTab() {
         }}
       >
         {syncing
-          ? <><Loader2 size={14} className="animate-spin" /> Syncing internships…</>
-          : <><RefreshCw size={14} /> Sync Latest Internships</>
+          ? <><Loader2 size={14} className="animate-spin" /> Refreshing…</>
+          : <><RefreshCw size={14} /> Refresh</>
         }
       </button>
 
@@ -228,7 +228,7 @@ function InternshipCard({ item }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '6px' }}>
             <p style={{ fontSize: '13px', fontWeight: 700, color: '#0a2a0f', fontFamily: "'DM Sans', sans-serif", margin: 0, lineHeight: 1.3 }}>
-              {item.title}
+              {item.company}
             </p>
             {expiring && (
               <span style={{
@@ -243,7 +243,7 @@ function InternshipCard({ item }) {
             )}
           </div>
           <p style={{ fontSize: '12px', color: '#5a8060', fontFamily: "'DM Sans', sans-serif", margin: '2px 0 0', fontWeight: 600 }}>
-            {item.company}
+            {item.title}
           </p>
         </div>
       </div>

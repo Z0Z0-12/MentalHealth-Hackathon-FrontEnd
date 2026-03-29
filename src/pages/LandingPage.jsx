@@ -459,7 +459,7 @@ function LandingPage() {
 
         {/* NAV */}
         <nav className={`lp-nav${scrolled ? ' scrolled' : ''}`}>
-          <Link to="/" className="lp-nav-logo">Zenora</Link>
+          <Link to="/" className="lp-nav-logo">Manasly</Link>
           <Link to="/login" className="lp-nav-cta">Join now →</Link>
         </nav>
 
@@ -558,7 +558,7 @@ function LandingPage() {
 
         {/* FOOTER */}
         <footer className="lp-footer">
-          © 2026 Zenora · Built for student wellbeing
+          © 2026 Manasly · Built for student wellbeing
         </footer>
 
       </div>

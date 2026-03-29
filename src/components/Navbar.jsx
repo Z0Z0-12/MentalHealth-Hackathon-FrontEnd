@@ -18,7 +18,7 @@ export default function Navbar() {
         letterSpacing: '-0.6px',
         textDecoration: 'none',
       }}>
-        Zenora
+        Manasly
       </Link>
 
       {/* Avatar + Profile Menu */}
